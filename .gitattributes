@@ -1,0 +1,15 @@
+# Zeilenenden festnageln: .bat-Dateien brauchen CRLF, sonst startet die
+# Batch-Datei unter Windows nicht zuverlaessig.
+*.bat           text eol=crlf
+*.py            text eol=lf
+*.md            text eol=lf
+*.txt           text eol=lf
+.gitignore      text eol=lf
+.gitattributes  text eol=lf
+
+# Binaerdateien nie anfassen
+*.xlsx  binary
+*.xlsm  binary
+*.exz   binary
+*.png   binary
+*.ipynb text eol=lf

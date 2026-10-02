@@ -1,0 +1,34 @@
+# ---------------------------------------------------------------------------
+#  WICHTIG: Hier darf KEIN Pruefungsmaterial landen. Eigene Fragendateien
+#  und eduExaminer-Exporte gehoeren nach input/ bzw. output/ - beide sind
+#  ausgeschlossen. Mitversioniert wird nur vorlage/ mit Platzhaltern.
+# ---------------------------------------------------------------------------
+input/*
+!input/.gitkeep
+output/*
+!output/.gitkeep
+
+# Pruefungsmaterial, falls es doch irgendwo landet
+*.exz
+!vorlage/struktur-vorlage.exz
+*.xlsx
+*.xlsm
+!vorlage/Fragen-Vorlage.xlsx
+!vorlage/Beispiel-Fragen.xlsx
+*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Werkzeuge
+.streamlit/secrets.toml
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

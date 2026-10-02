@@ -1,0 +1,137 @@
+eduExaminer-Import: Excel-Fragen mit Komma-Punkten hochladen
+============================================================
+
+Wozu das gut ist
+----------------
+Der normale Excel-Import von eduExaminer kann nur GANZE Punkte. Dieses
+Werkzeug erzeugt stattdessen eine .exz-Datei, in der auch Komma-Punkte
+stehen koennen (zum Beispiel -1,333).
+
+
+Einmalig vorbereiten: Python installieren
+-----------------------------------------
+1. https://www.python.org/downloads/ oeffnen und Python herunterladen.
+2. Beim Installieren unbedingt "Add python.exe to PATH" ankreuzen.
+3. Rechner einmal neu starten.
+
+Alles Weitere macht das Werkzeug selbst.
+
+
+So wird es benutzt
+------------------
+1. Fragen in einer Excel-Datei erfassen. Zum Abschauen gibt es
+
+     vorlage\Beispiel-Fragen.xlsx   ausgefuellt, beide Fragearten
+     vorlage\Fragen-Vorlage.xlsx    leer, mit den Originalspalten
+
+   Am schnellsten geht es, die Beispieldatei zu kopieren und die
+   Fragen darin zu ersetzen.
+
+2. Die Excel-Datei mit der Maus auf "Excel-zu-EXZ.bat" ziehen und
+   loslassen.
+
+3. Ein Fenster geht kurz auf, rechnet und schliesst sich wieder.
+   Die fertige .exz-Datei liegt danach IM SELBEN ORDNER wie die
+   Excel-Datei und hat denselben Namen.
+
+4. Diese .exz-Datei in eduExaminer hochladen:
+      Rolle "Autor" waehlen
+      -> Topics Questions
+      -> import
+      -> Reiter "bizExaminer file"
+      -> Datei waehlen
+      -> Upload
+
+Wenn ein Fehler auftritt, bleibt das Fenster offen und nennt die
+Ursache. Sonst schliesst es sich von selbst.
+
+
+Spaltenaufbau der Excel-Datei
+-----------------------------
+Das Werkzeug erkennt zwei Varianten automatisch. Entscheidend ist die
+Spalte mit der Typangabe - der Fragetext steht in der Spalte links davon.
+
+Multiple Choice:
+
+  A  Nummer (darf auch fehlen)
+  B  Fragetext
+  C  multiple
+  D  Antwort 1     E  true oder false
+  F  Antwort 2     G  true oder false
+  H  Antwort 3     I  true oder false
+  J  Antwort 4     K  true oder false
+
+Offene Fragen (Freitext, Korrektur per Hand):
+
+  A  Fragetext
+  B  freeanswer        ("essay" wird auch erkannt)
+
+Beide Arten duerfen in derselben Datei gemischt vorkommen.
+
+In den true/false-Spalten geht beides: die Woerter true und false, oder
+WAHR und FALSCH, wie ein deutsches Excel sie anzeigt. Auch 1/0, x und
+ja/nein werden verstanden.
+
+
+Wie die Punkte berechnet werden
+-------------------------------
+Offene Fragen: Die Punktzahl richtet sich nach dem Umfang der erwarteten
+Antwort und wird beim Umwandeln eingestellt (Voreinstellung 4). Sie gilt
+fuer alle offenen Fragen einer Datei - bei sehr unterschiedlichem Umfang
+also besser mehrere Dateien bauen. Korrigiert wird von Hand.
+
+Multiple Choice: maximal 4 Punkte je Frage. Wie viel eine einzelne
+Antwort zaehlt, haengt davon ab, wie viele Antworten richtig sind:
+
+   1 richtige Antwort   ->  richtig +4        falsch -1,333
+   2 richtige Antworten ->  richtig +2        falsch -2
+   3 richtige Antworten ->  richtig +1,333    falsch -4
+
+Das ist so gerechnet, dass reines Raten im Schnitt 0 Punkte bringt.
+Die Zahl der richtigen Antworten wird aus der Excel-Datei gezaehlt, es
+braucht also keine zusaetzliche Spalte dafuer.
+
+
+Wenn etwas nicht klappt
+-----------------------
+"Python ist nicht installiert oder nicht im PATH"
+   Python fehlt oder wurde ohne "Add to PATH" installiert. Schritt 1
+   oben wiederholen.
+
+"Die Vorlage enthaelt keine Frage vom Typ ..."
+   Die Datei vorlage\struktur-vorlage.exz fehlt oder wurde ersetzt.
+   Sie liefert den Bauplan fuer beide Fragearten und gehoert
+   unveraendert in den Ordner "vorlage".
+
+"Import of questions failed!" in eduExaminer
+   Die hochgeladene Datei wurde nicht angenommen. Erst mit EINER
+   Testfrage probieren, bevor ein ganzer Fragenpool hochgeht.
+
+"Zeile 7, Spalte E: 'ja vielleicht' ist weder wahr noch falsch"
+   In dieser Zelle steht etwas, das nicht als richtig oder falsch
+   erkannt wird. Dort true oder false eintragen.
+
+"Keine Typspalte gefunden"
+   Es fehlt die Spalte mit "multiple" bzw. "freeanswer".
+
+Windows warnt vor der Datei
+   Beim ersten Start auf "Weitere Informationen" und dann
+   "Trotzdem ausfuehren" klicken. Das kommt daher, dass die Datei aus
+   dem Internet stammt.
+
+
+Einstellungen aendern
+---------------------
+"Excel-zu-EXZ.bat" mit dem Editor oeffnen. Oben stehen:
+
+   TOTAL     maximale Punkte je Multiple-Choice-Frage, Standard 4
+   ESSAY     Punkte je offener Frage, Voreinstellung 4,
+             je nach Umfang der Fragen anzupassen
+   DECIMALS  Nachkommastellen, Standard 3
+   SHEET     Tabellenblatt; leer = erstes Blatt der Datei
+   NEGATIVE  auf --negative setzen, wenn eine Frage unter 0 Punkte
+             fallen darf
+
+Achtung: In der getesteten eduExaminer-Installation wurden negative
+Punktwerte beim Import auf 0 gesetzt. Vor dem Einsatz in einer echten
+Pruefung bitte an einer Testfrage pruefen, ob die Minuswerte ankommen.
