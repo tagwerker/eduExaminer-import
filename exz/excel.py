@@ -238,8 +238,9 @@ def detect_layout(ws) -> Layout:
         below = [ws.cell(r, col_number + 1).value
                  for r in range(first_row + 1, last_scan + 1)]
         numbered = sum(1 for v in below if isinstance(v, (int, float)))
-        if (head is not None and not isinstance(head, (int, float))
-                and numbered >= 2):
+        # Beschriftung ("Nr.") ODER leere Zelle, waehrend die Zeilen darunter
+        # durchnummeriert sind - beides heisst: das ist die Kopfzeile.
+        if not isinstance(head, (int, float)) and numbered >= 2:
             first_row += 1
 
     return Layout(col_type, col_text, col_number, col_type + 1, first_row)
