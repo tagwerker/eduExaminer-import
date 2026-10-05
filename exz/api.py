@@ -6,7 +6,9 @@ damit ein Upload nicht erst auf die Platte geschrieben werden muss.
 """
 from __future__ import annotations
 
+import base64
 import copy
+import hashlib
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -141,6 +143,50 @@ def assign_ids(items: list[dict]) -> None:
             item["id"] = base + offset
 
 
+def name_images(questions: list[Question]) -> int:
+    """Jedem Bild einen innerhalb des Exports eindeutigen Dateinamen geben."""
+    counter = 0
+    for q in questions:
+        for image in getattr(q, "images", []) or []:
+            counter += 1
+            image.name = f"{counter}.{image.ext}"
+    return counter
+
+
+def attach_images(item: dict, question: Question) -> None:
+    """Bilder einer Frage in das images-Dict des Frage-Objekts eintragen.
+
+    Muss NACH der ID-Vergabe laufen: Schluessel und dataID enthalten die
+    endgueltige Frage-ID. Im HTML steht dagegen der Platzhalter
+    ##question_id##, den eduExaminer selbst ersetzt.
+    """
+    images = getattr(question, "images", None)
+    if not images:
+        return
+    qid = item.get("id")
+    store = item.setdefault("images", {})
+    if not isinstance(store, dict):
+        store = item["images"] = {}
+    for image in images:
+        if not image.name:
+            continue
+        key = f"questionresources/{qid}/{image.name}"
+        store[key] = {
+            "dataType": "exmimg",
+            "filename_original": f"zeile-{image.row}.{image.ext}",
+            "filename_new": image.name,
+            "type": "question",
+            "dataID": qid,
+            "resourcesCode": hashlib.sha1(image.data).hexdigest()[:10],
+            "mimeType": image.mime,
+            "path": f"questionresources/##question_id##/{image.name}",
+            "data": base64.b64encode(image.data).decode("ascii"),
+            "use_as_question_enclosure": 0,
+            "print_with_testletter": 0,
+            "download_in_question": 0,
+        }
+
+
 def set_title(node: dict, question: Question,
               template: str = "Frage {nr:02d}") -> None:
     """Titel setzen. '{nr}' = Fragennummer, '{text}' = Fragetext."""
@@ -178,6 +224,7 @@ class BuildResult:
     prototypes: dict[str, Any] = field(default_factory=dict)
     score_field: str = ""
     container: str = ""
+    n_images: int = 0
 
     @property
     def counts(self) -> dict[str, int]:
@@ -267,6 +314,8 @@ def build_exz(
             )
         score_field = candidates[0]
 
+    name_images(questions)
+
     all_points: list[Points] = []
     new_questions: list[dict] = []
     for q in questions:
@@ -286,6 +335,8 @@ def build_exz(
         new_questions.append(item)
 
     assign_ids(new_questions)
+    for item, q in zip(new_questions, questions):
+        attach_images(item, q)
     qlist[:] = new_questions
 
     return BuildResult(
@@ -295,6 +346,7 @@ def build_exz(
         prototypes={k: v.get("exm_question_types_id") for k, v in prototypes.items()},
         score_field=score_field,
         container=container.kind,
+        n_images=sum(len(getattr(q, "images", []) or []) for q in questions),
     )
 
 

@@ -96,6 +96,23 @@ def normalise_type(value) -> str | None:
 
 
 @dataclass
+class QuestionImage:
+    """Ein in der Arbeitsmappe eingebettetes Bild, einer Frage zugeordnet."""
+    data: bytes
+    ext: str
+    width: int
+    height: int
+    row: int
+    name: str = ""          # Dateiname im EXZ, vergibt exz/api.py
+
+    @property
+    def mime(self) -> str:
+        return {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+                "gif": "image/gif", "bmp": "image/bmp",
+                "webp": "image/webp"}.get(self.ext.lower(), "application/octet-stream")
+
+
+@dataclass
 class Option:
     text: str
     correct: bool
@@ -108,6 +125,7 @@ class Question:
     qtype: str                       # "multiple" | "essay"
     options: list[Option] = field(default_factory=list)
     row: int = 0
+    images: list[QuestionImage] = field(default_factory=list)
 
     @property
     def n_options(self) -> int:
@@ -116,6 +134,44 @@ class Question:
     @property
     def n_correct(self) -> int:
         return sum(1 for o in self.options if o.correct)
+
+
+MAX_IMAGE_WIDTH = 700
+
+
+def read_images(ws) -> dict[int, list[QuestionImage]]:
+    """Eingebettete Bilder, nach der Zeile ihres Ankers gruppiert (1-basiert).
+
+    openpyxl liefert die Bilder ueber ws._images; der Anker sagt, an welcher
+    Zelle das Bild haengt. Breite Bilder werden proportional verkleinert,
+    damit sie die Pruefungsansicht nicht sprengen.
+    """
+    out: dict[int, list[QuestionImage]] = {}
+    for image in getattr(ws, "_images", []) or []:
+        anchor = getattr(image, "anchor", None)
+        start = getattr(anchor, "_from", None)
+        if start is None:
+            continue
+        try:
+            data = image._data()
+        except Exception:                                   # noqa: BLE001
+            continue
+        if not data:
+            continue
+
+        width = int(getattr(image, "width", 0) or 0)
+        height = int(getattr(image, "height", 0) or 0)
+        if width > MAX_IMAGE_WIDTH and height:
+            height = max(1, round(height * MAX_IMAGE_WIDTH / width))
+            width = MAX_IMAGE_WIDTH
+
+        row = start.row + 1
+        out.setdefault(row, []).append(QuestionImage(
+            data=data,
+            ext=(getattr(image, "format", "") or "png").lower(),
+            width=width, height=height, row=row,
+        ))
+    return out
 
 
 @dataclass
@@ -161,16 +217,32 @@ def detect_layout(ws) -> Layout:
 
     col_text = col_type - 1
     col_number = col_text - 1 if col_text >= 1 else None
+    first_row = first_hit_row[col_type]
+    last_scan = min(ws.max_row, SCAN_ROWS)
+
     if col_number is not None:
         numeric = sum(
-            1 for r in range(first_hit_row[col_type], min(ws.max_row, SCAN_ROWS) + 1)
+            1 for r in range(first_row, last_scan + 1)
             if isinstance(ws.cell(r, col_number + 1).value, (int, float))
         )
         if numeric == 0:
             col_number = None
 
-    return Layout(col_type, col_text, col_number,
-                  col_type + 1, first_hit_row[col_type])
+    # Manche Vorlagen fuellen die Kopfzeile als Beispiel aus ("antwort1 / true"),
+    # inklusive des Worts "multiple" in der Typspalte. Strukturell ist sie dann
+    # nicht von einer echten Frage zu unterscheiden - erkennbar ist sie nur
+    # daran, dass in der Nummernspalte eine Beschriftung statt einer Zahl steht,
+    # waehrend die folgenden Zeilen durchnummeriert sind.
+    if col_number is not None and first_row < last_scan:
+        head = ws.cell(first_row, col_number + 1).value
+        below = [ws.cell(r, col_number + 1).value
+                 for r in range(first_row + 1, last_scan + 1)]
+        numbered = sum(1 for v in below if isinstance(v, (int, float)))
+        if (head is not None and not isinstance(head, (int, float))
+                and numbered >= 2):
+            first_row += 1
+
+    return Layout(col_type, col_text, col_number, col_type + 1, first_row)
 
 
 def read_questions(path: str, sheet: str | None = None
@@ -179,6 +251,12 @@ def read_questions(path: str, sheet: str | None = None
     wb = openpyxl.load_workbook(path, data_only=True)
     ws = wb[sheet] if sheet else wb.worksheets[0]
     layout = detect_layout(ws)
+
+    # Bilder liest nur die nicht-schreibgeschuetzte Mappe; data_only verliert
+    # sie nicht, aber der Anker steht am Zellbezug, nicht am Wert.
+    images_by_row = read_images(
+        openpyxl.load_workbook(path)[ws.title]
+    )
 
     questions: list[Question] = []
     warnings: list[str] = []
@@ -190,9 +268,10 @@ def read_questions(path: str, sheet: str | None = None
 
         text = clean_text(get(layout.col_text))
         raw_type = get(layout.col_type)
-        if not text and not raw_type:
+        images = images_by_row.get(rownum, [])
+        if not text and not raw_type and not images:
             continue
-        if not text:
+        if not text and not images:
             warnings.append(f"Zeile {rownum}: Typ angegeben, aber kein Fragetext "
                             f"- uebersprungen.")
             continue
@@ -233,6 +312,13 @@ def read_questions(path: str, sheet: str | None = None
             except (TypeError, ValueError):
                 pass
 
-        questions.append(Question(number, text, qtype, options, rownum))
+        questions.append(
+            Question(number, text, qtype, options, rownum, images))
+
+    verwendet = {im.row for q in questions for im in q.images}
+    for row in sorted(set(images_by_row) - verwendet):
+        warnings.append(
+            f"Zeile {row}: Bild gefunden, aber keine Frage in dieser Zeile "
+            f"- das Bild wird nicht uebernommen.")
 
     return questions, warnings, layout

@@ -62,8 +62,42 @@ def as_html(text: str) -> str:
     return "".join(f"<p>{line}</p>" for line in lines)
 
 
+def image_tag(image) -> str:
+    """<img> mit den Platzhaltern, die eduExaminer beim Anzeigen aufloest.
+
+    ##images_path## und ##question_id## setzt das System selbst ein - der
+    Pfad darf deshalb NICHT auf eine konkrete Frage-ID zeigen.
+    """
+    size = ""
+    if image.width and image.height:
+        size = f' width="{image.width}" height="{image.height}"'
+    return (f'<img src="##images_path##questionresources/##question_id##/'
+            f'{image.name}"{size} alt="" />')
+
+
+def question_html(q: Question) -> str:
+    """Fragetext plus eingebettete Bilder als HTML fuer das CDATA.
+
+    Ohne Bilder bleibt die Ausgabe exakt wie bisher - nur so bleibt das
+    erzeugte XML bitgenau identisch zu echten eduExaminer-Exporten.
+    """
+    body = as_html(q.text)
+    if not getattr(q, "images", None):
+        return body
+    chunks = []
+    if body:
+        chunks.append(body if body.startswith("<p>") else f"<p>{body}</p>")
+    chunks += [f"<p>{image_tag(im)}</p>" for im in q.images if im.name]
+    return "".join(chunks)
+
+
 def _mattext(text: str) -> str:
     return f'<mattext texttype="text/html">{cdata(as_html(text))}</mattext>'
+
+
+def _mattext_html(html: str) -> str:
+    """Wie _mattext, aber der Inhalt ist bereits fertiges HTML."""
+    return f'<mattext texttype="text/html">{cdata(html)}</mattext>'
 
 
 SPLITVIEW = ("<settings><showquestiontextinsplitview>false"
@@ -77,7 +111,7 @@ def build_presentation(q: Question, shuffle: bool = False,
         return (
             '<?xml version="1.0"?>\n<presentation>'
             '<version downcompatible="1">1</version>'
-            f"<material>{_mattext(q.text)}</material>"
+            f"<material>{_mattext_html(question_html(q))}</material>"
             f"{SPLITVIEW}"
             "<activateTinyMCE>true</activateTinyMCE>"
             "\n</presentation>\n"
@@ -86,7 +120,7 @@ def build_presentation(q: Question, shuffle: bool = False,
     parts = [
         '<?xml version="1.0"?>\n<presentation>',
         '<version downcompatible="1">1</version>',
-        f'<material label="question">{_mattext(q.text)}</material>',
+        f'<material label="question">{_mattext_html(question_html(q))}</material>',
     ]
 
     if q.qtype == "multiple":

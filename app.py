@@ -107,10 +107,14 @@ counts = {}
 for q in questions:
     counts[q.qtype] = counts.get(q.qtype, 0) + 1
 
-left, middle, right = st.columns(3)
-left.metric("Fragen gesamt", len(questions))
-middle.metric("Multiple Choice", counts.get("multiple", 0))
-right.metric("Offene Fragen", counts.get("essay", 0))
+n_images = sum(len(q.images) for q in questions)
+
+spalten = st.columns(4 if n_images else 3)
+spalten[0].metric("Fragen gesamt", len(questions))
+spalten[1].metric("Multiple Choice", counts.get("multiple", 0))
+spalten[2].metric("Offene Fragen", counts.get("essay", 0))
+if n_images:
+    spalten[3].metric("Bilder", n_images)
 
 st.caption(f"Erkannter Aufbau: {layout.describe()}")
 
@@ -130,11 +134,21 @@ for q in questions:
         "je richtig": de(pts.correct) if q.qtype == "multiple" else "–",
         "je falsch": de(pts.wrong) if q.qtype == "multiple" else "–",
         "max": de(pts.max_score),
-        "Frage": q.text,
+        "Bild": "ja" if q.images else "",
+        "Frage": q.text or ("(nur Bild)" if q.images else ""),
     })
 
 with st.expander(f"Vorschau der {len(rows)} Fragen", expanded=False):
     st.dataframe(rows, hide_index=True, use_container_width=True)
+
+if n_images:
+    with st.expander(f"{n_images} Bild(er) aus der Datei", expanded=False):
+        for q in questions:
+            for bild in q.images:
+                st.caption(
+                    f"Frage {q.number} (Zeile {q.row}) – "
+                    f"{bild.width}×{bild.height} px")
+                st.image(bild.data, width=min(bild.width or 400, 400))
 
 # --- bauen ------------------------------------------------------------------
 try:

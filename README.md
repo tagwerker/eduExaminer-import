@@ -398,41 +398,50 @@ Nachkommastellen unvermeidbar; `--decimals 4` macht 3,9999 daraus. Auf der
 
 ## Bilder in Fragen
 
-Möglich, aber noch nicht implementiert. Der Mechanismus ist entschlüsselt:
+**Unterstützt.** Ein Bild, das in der Excel-Datei in der Zeile einer Frage
+eingebettet ist, wandert mit in die EXZ-Datei. Der Anker entscheidet: openpyxl
+liefert über `ws._images` zu jedem Bild die Zelle, an der es hängt — die Zeile
+daraus bestimmt, zu welcher Frage es gehört.
 
-Am Frage-Objekt hängt ein `images`-Dictionary, Schlüssel
-`questionresources/<frage-id>/<dateiname>`:
+Eine Frage darf **nur** aus einem Bild bestehen; eine Zeile mit Fragetyp, Bild
+und leerer Textspalte wird nicht mehr übersprungen.
+
+Am Frage-Objekt entsteht ein `images`-Eintrag:
 
 ```json
-"images": {
-  "questionresources/733/151.jpg": {
-    "dataType": "exmimg",
-    "filename_original": "task_two_1.jpg",
-    "filename_new": "151.jpg",
-    "type": "question",
-    "dataID": 733,
-    "resourcesCode": "v0ys7xllm8",
-    "mimeType": "image/jpeg",
-    "path": "questionresources/##question_id##/151.jpg",
-    "data": "<base64>",
-    "use_as_question_enclosure": 0,
-    "print_with_testletter": 0,
-    "download_in_question": 0
-  }
+"questionresources/9/1.png": {
+  "dataType": "exmimg",
+  "filename_original": "zeile-10.png",
+  "filename_new": "1.png",
+  "type": "question",
+  "dataID": 9,
+  "resourcesCode": "af8c49fa5e",
+  "mimeType": "image/png",
+  "path": "questionresources/##question_id##/1.png",
+  "data": "<base64>",
+  "use_as_question_enclosure": 0,
+  "print_with_testletter": 0,
+  "download_in_question": 0
 }
 ```
 
-Im Fragetext wird es über Platzhalter referenziert, die eduExaminer beim
-Anzeigen auflöst:
+Im Fragetext steht die Referenz mit Platzhaltern, die eduExaminer beim Anzeigen
+auflöst:
 
 ```html
-<img src="##images_path##questionresources/##question_id##/151.jpg"
-     width="206" height="132" alt="..." />
+<p><img src="##images_path##questionresources/##question_id##/1.png"
+        width="700" height="387" alt="" /></p>
 ```
 
-Beobachtet an einem Demo-Export mit 29 Bildern: `resourcesCode` kommt genau
-einmal vor (reine interne Kennung, keine Querverweise), `filename_new` ist
-über den ganzen Export eindeutig.
+Details, die eingehalten werden:
+
+- Schlüssel und `dataID` tragen die **endgültige** Frage-ID, deshalb werden die
+  Bilder erst nach der ID-Vergabe angehängt
+- `filename_new` ist über den ganzen Export eindeutig (fortlaufend gezählt)
+- `resourcesCode` ist ein Hash der Bilddaten — gleiche Eingabe, gleiche Datei
+- Bilder breiter als **700 px** werden proportional verkleinert
+- ohne Bilder bleibt das erzeugte XML unverändert; die Bit-Gleichheit zu echten
+  Exporten ist weiterhin geprüft (46/46)
 
 ## Quellen
 
