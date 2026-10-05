@@ -58,18 +58,27 @@ with st.sidebar:
     )
 
     st.markdown("**Multiple Choice** – fest eingestellt:")
+    st.markdown("Ein Punkt je Antwortmöglichkeit.")
     st.markdown(
         """
-| richtige Antworten | richtig | falsch |
+| richtig von 4 | richtig | falsch |
 |---|---|---|
-| 1 von 4 | +4 | −1,333 |
-| 2 von 4 | +2 | −2 |
-| 3 von 4 | +1,333 | −4 |
+| 1 | +4 | −1,333 |
+| 2 | +2 | −2 |
+| 3 | +1,333 | −4 |
+
+| richtig von 6 | richtig | falsch |
+|---|---|---|
+| 1 | +6 | −1,2 |
+| 2 | +3 | −1,5 |
+| 3 | +2 | −2 |
+| 4 | +1,5 | −3 |
+| 5 | +1,2 | −6 |
 """
     )
 
 opts = BuildOptions(
-    total=DEFAULT_TOTAL,
+    total=None,   # ein Punkt je Antwortmoeglichkeit
     essay_points=float(essay_points),
     decimals=DEFAULT_DECIMALS,
     negative=False,

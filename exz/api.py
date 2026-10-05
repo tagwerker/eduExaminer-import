@@ -21,6 +21,7 @@ from .scoring import (
     DEFAULT_DECIMALS,
     DEFAULT_ESSAY_POINTS,
     DEFAULT_TOTAL,
+    POINTS_PER_OPTION,
     Points,
     compute,
     compute_essay,
@@ -201,7 +202,7 @@ def set_title(node: dict, question: Question,
 
 @dataclass
 class BuildOptions:
-    total: float = DEFAULT_TOTAL
+    total: float | None = None      # None = ein Punkt je Antwortmoeglichkeit
     essay_points: float = DEFAULT_ESSAY_POINTS
     decimals: int = DEFAULT_DECIMALS
     scheme: str = "balanced"
@@ -238,11 +239,23 @@ class BuildResult:
                          for t, n in sorted(self.counts.items()))
 
 
+def question_total(question: Question, opts: BuildOptions) -> float:
+    """Maximalpunkte einer Multiple-Choice-Frage.
+
+    Ohne ausdrueckliche Vorgabe gilt ein Punkt je Antwortmoeglichkeit:
+    4 Antworten -> 4 Punkte, 6 Antworten -> 6 Punkte.
+    """
+    if opts.total is not None:
+        return opts.total
+    return max(1, question.n_options) * POINTS_PER_OPTION
+
+
 def points_for(question: Question, opts: BuildOptions) -> Points:
     """Punkte je Frage - offene Fragen bekommen eine feste Punktzahl."""
     if question.qtype != "multiple":
         return compute_essay(opts.essay_points, opts.decimals)
-    return compute(question.n_options, question.n_correct, opts.total,
+    return compute(question.n_options, question.n_correct,
+                   question_total(question, opts),
                    opts.decimals, scheme=opts.scheme,
                    plus=opts.plus, minus=opts.minus)
 

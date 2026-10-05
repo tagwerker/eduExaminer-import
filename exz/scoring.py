@@ -32,7 +32,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 
-DEFAULT_TOTAL = 4.0
+# Standardregel: ein Punkt je Antwortmoeglichkeit. Eine Frage mit 4 Antworten
+# ist damit 4 Punkte wert, eine mit 6 Antworten 6 Punkte. Das haelt die
+# Rechnung glatt (bei n=6 gehen alle Werte exakt auf) und gewichtet Fragen
+# nach der Zahl der Einzelurteile, die sie verlangen.
+POINTS_PER_OPTION = 1.0
+DEFAULT_TOTAL = 4.0            # nur noch als fester Ueberschreibwert
 DEFAULT_DECIMALS = 3
 DEFAULT_ESSAY_POINTS = 4.0
 SCHEMES = ("balanced", "symmetric")

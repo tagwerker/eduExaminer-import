@@ -73,14 +73,26 @@ Nur das Ankreuzen wird bewertet, die Nicht-Ankreuz-Fälle bleiben 0.
 correct = + TOTAL / k        wrong = − TOTAL / (n − k)
 ```
 
-| k (bei n=4) | TOTAL=4 | TOTAL=12 |
-|---|---|---|
-| 1 | +4 / −1,333 | +12 / −4 |
-| 2 | +2 / −2 | +6 / −6 |
-| 3 | +1,333 / −4 | +4 / −12 |
+**TOTAL ist standardmäßig die Zahl der Antwortmöglichkeiten** — ein Punkt je
+Antwort. Eine Frage mit 4 Antworten ist 4 Punkte wert, eine mit 6 Antworten 6.
+Eine feste Punktzahl erzwingt `--total`.
 
-Maximum = TOTAL, Erwartungswert beim Raten = 0, Leerabgabe = 0.
-Nachteil: bei k=3 ergibt 3 × 1,333 = 3,999 statt 4.
+| k | n=4 (max 4) | n=6 (max 6) |
+|---|---|---|
+| 1 | +4 / −1,333 | +6 / −1,2 |
+| 2 | +2 / −2 | +3 / −1,5 |
+| 3 | +1,333 / −4 | +2 / −2 |
+| 4 | — | +1,5 / −3 |
+| 5 | — | +1,2 / −6 |
+
+Erwartungswert beim Raten = 0, Leerabgabe = 0 — in beiden Fällen.
+
+Bei n=6 gehen **alle** Werte exakt auf. Nur n=4 mit k=3 hat einen Rest:
+3 × 1,333 = 3,999 statt 4.
+
+Die Regel gewichtet Fragen nach der Zahl der Einzelurteile, die sie verlangen.
+In einer Prüfung mit gemischten Fragen zählt eine 6er-Frage damit das
+1,5-Fache einer 4er-Frage.
 
 ### `--scheme symmetric`
 

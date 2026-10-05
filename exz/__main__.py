@@ -12,6 +12,7 @@ import uuid
 
 from .api import (
     SCORE_HINTS,
+    question_total,
     BuildError,
     BuildOptions,
     build_exz,
@@ -42,7 +43,9 @@ from .scoring import (
 
 
 def _add_scoring_args(parser):
-    parser.add_argument("--total", type=float, default=DEFAULT_TOTAL)
+    parser.add_argument("--total", type=float, default=None,
+                        help="feste Maximalpunkte je MC-Frage; ohne Angabe "
+                             "ein Punkt je Antwortmoeglichkeit")
     parser.add_argument("--decimals", type=int, default=DEFAULT_DECIMALS)
     parser.add_argument("--scheme", choices=list(SCHEMES), default="balanced",
                         help="balanced: nur Ankreuzen zaehlt. "
@@ -63,7 +66,7 @@ def _add_scoring_args(parser):
 def _opts(args) -> BuildOptions:
     """CLI-Argumente in die Optionen des gemeinsamen Kerns uebersetzen."""
     return BuildOptions(
-        total=getattr(args, "total", DEFAULT_TOTAL),
+        total=getattr(args, "total", None),
         essay_points=getattr(args, "essay_points", DEFAULT_ESSAY_POINTS),
         decimals=getattr(args, "decimals", DEFAULT_DECIMALS),
         scheme=getattr(args, "scheme", "balanced"),
@@ -225,8 +228,13 @@ def cmd_build(args):
     summary = ", ".join(f"{n}x {names.get(t, t)}" for t, n in sorted(counts.items()))
     print(f"{len(questions)} Fragen aus {os.path.basename(args.xlsx)}: {summary}")
     if counts.get("multiple"):
-        print(f"  Multiple Choice : max {opts.total:g} Punkte je Frage "
-              f"(Schema {opts.scheme})")
+        maxima = sorted({question_total(q, opts) for q in questions
+                         if q.qtype == "multiple"})
+        wie = ("ein Punkt je Antwortmoeglichkeit" if opts.total is None
+               else "fest eingestellt")
+        print(f"  Multiple Choice : max "
+              f"{' / '.join(f'{m:g}' for m in maxima)} Punkte je Frage "
+              f"({wie}, Schema {opts.scheme})")
     if counts.get("essay"):
         print(f"  offene Fragen   : {opts.essay_points:g} Punkte je Frage")
 
