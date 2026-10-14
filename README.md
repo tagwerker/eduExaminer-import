@@ -282,8 +282,8 @@ python -m exz build fragen.xlsx --template vorlage/struktur-vorlage.exz -o impor
 Ohne `--template` werden nur die XML-Dateien nach `output/xml/` geschrieben.
 
 Optionen: `--total` · `--decimals` · `--scheme balanced|symmetric` · `--plus` ·
-`--minus` · `--negative` · `--shuffle` · `--score-field` · `--presentation-field` ·
-`--title-format "Frage {nr:02d}"`
+`--minus` · `--negative` · `--shuffle` · `--language DE|EN` · `--score-field` ·
+`--presentation-field` · `--title-format "Frage {nr:02d}"`
 
 Beispiel für max +4 / min −2 mit aktivierten Minuspunkten:
 
