@@ -213,6 +213,7 @@ class BuildOptions:
     title_format: str = "Frage {nr:02d}"
     presentation_field: str = "presentation"
     score_field: str | None = None
+    language: str | None = "DE"     # Sprachkennung der Frage-Revision
 
 
 @dataclass
@@ -226,6 +227,7 @@ class BuildResult:
     score_field: str = ""
     container: str = ""
     n_images: int = 0
+    language: str = ""
 
     @property
     def counts(self) -> dict[str, int]:
@@ -343,6 +345,8 @@ def build_exz(
             build_presentation(q, shuffle=opts.shuffle))
         rev[score_field] = b64_encode_text(
             build_evaluation(q, pts, allow_negative=opts.negative))
+        if opts.language:
+            rev["language"] = opts.language
         set_title(rev, q, opts.title_format)
         set_title(item, q, opts.title_format)
         new_questions.append(item)
@@ -359,6 +363,7 @@ def build_exz(
         prototypes={k: v.get("exm_question_types_id") for k, v in prototypes.items()},
         score_field=score_field,
         container=container.kind,
+        language=opts.language or "",
         n_images=sum(len(getattr(q, "images", []) or []) for q in questions),
     )
 

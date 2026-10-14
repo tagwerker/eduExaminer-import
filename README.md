@@ -46,6 +46,11 @@ export.exz  ──zlib──▶  JSON  ──base64──▶  XML
 - Revision: `presentation` · `resprocessing` · `feedback` ·
   `exm_question_type_instructions_id` · `presentationType` · `language` · `editmode`
 
+`language` trägt die Sprachkennung der Revision, beobachtet wurden `DE` und `EN`.
+Eine Frage kann mehrere Revisionen in verschiedenen Sprachen haben; dieser
+Generator schreibt immer genau eine Revision, deren Sprache über `--language`
+bzw. die Auswahl in der App gesetzt wird (Voreinstellung `DE`).
+
 Eigenheiten des XML-Dialekts, die eingehalten werden müssen:
 
 - Zeilenumbruch nach der XML-Deklaration, sonst alles auf einer Zeile
@@ -211,7 +216,8 @@ streamlit run app.py
 Oder per Doppelklick auf `App-starten.bat` — die richtet beim ersten Start
 alles ein und öffnet den Browser.
 
-Einstellbar in der App: **Punkte je offener Frage** (Voreinstellung 4, je nach Umfang anzupassen). Die
+Einstellbar in der App: **Sprache der Fragen** (Deutsch oder English) und
+**Punkte je offener Frage** (Voreinstellung 4, je nach Umfang anzupassen). Die
 Multiple-Choice-Bewertung steht fest und wird nur angezeigt; Maximalpunkte,
 Nachkommastellen und Minuspunkte liegen hinter „Erweitert".
 

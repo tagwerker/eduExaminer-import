@@ -49,6 +49,15 @@ if not TEMPLATE.exists():
     st.stop()
 
 with st.sidebar:
+    st.header("Sprache")
+    sprache = st.radio(
+        "Sprache der Fragen",
+        options=["DE", "EN"],
+        format_func=lambda k: {"DE": "Deutsch", "EN": "English"}[k],
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+
     st.header("Bepunktung")
 
     essay_points = st.number_input(
@@ -82,6 +91,7 @@ opts = BuildOptions(
     essay_points=float(essay_points),
     decimals=DEFAULT_DECIMALS,
     negative=False,
+    language=sprache,
 )
 
 upload = st.file_uploader(
@@ -171,8 +181,11 @@ except Exception as exc:  # noqa: BLE001
 
 out_name = Path(upload.name).with_suffix(".exz").name
 
+sprachname = {"DE": "Deutsch", "EN": "English"}.get(result.language,
+                                                    result.language)
 st.success(
-    f"{len(result.questions)} Fragen umgewandelt – {result.summary()}."
+    f"{len(result.questions)} Fragen umgewandelt, {result.summary()}. "
+    f"Sprache: {sprachname}."
 )
 st.download_button(
     f"⬇  {out_name} herunterladen",

@@ -56,6 +56,8 @@ def _add_scoring_args(parser):
     parser.add_argument("--minus", type=float,
                         help="symmetric: Abzug je falschem Urteil "
                              "(Standard plus/2)")
+    parser.add_argument("--language", default="DE",
+                        help="Sprachkennung der Fragen, z.B. DE oder EN")
     parser.add_argument("--essay-points", type=float,
                         default=DEFAULT_ESSAY_POINTS,
                         help="Punkte je offener Frage (Standard "
@@ -77,6 +79,7 @@ def _opts(args) -> BuildOptions:
         title_format=getattr(args, "title_format", "Frage {nr:02d}"),
         presentation_field=getattr(args, "presentation_field", "presentation"),
         score_field=getattr(args, "score_field", None),
+        language=(getattr(args, "language", "DE") or "DE").upper(),
     )
 
 
